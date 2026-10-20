@@ -212,6 +212,11 @@ The following mechanics are part of our current game concept. Some may change as
 | Restaurant customisation | Move furniture and change the restaurant layout. |
 | Renovations | Improve and expand the outside of the restaurant. |
 
+## 🎣 Fishing QTE Mechanic Test
+
+https://github.com/user-attachments/assets/ccfda741-c1fc-48ef-8572-6acb549a9f9f
+
+
 We have also discussed limiting the number of fish available in certain areas and using limited storage as part of the game's design. These systems will need further balancing and testing.
 
 ---
