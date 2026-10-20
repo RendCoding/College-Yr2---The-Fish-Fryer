@@ -1,0 +1,313 @@
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+
+public class QTE_Controller : MonoBehaviour
+{
+    [Header("QTE Settings")]
+    public float speed = 300f;
+    public Collider2D backgroundBar;
+
+    public bool SuccessfulQTE = false;
+
+    private Rigidbody2D rb;
+    private Collider2D myCollider;
+    private int direction = 1;
+    private bool inZone;
+    private bool qteFinished = false;
+
+    public int AttemptsTillComplete = 3;
+
+    public TargetZone target;
+
+    public enum DifficultyLevel
+    {
+        Easy,
+        Medium,
+        Hard,
+        None
+    }
+
+    public DifficultyLevel gameMode;
+
+    [Header("Target Size")]
+    public float EasyTargetWidth = 2f;
+    public float MediumTargetWidth = 1.5f;
+    public float HardTargetWidth = 1f;
+
+    public float EasyTargetSpeed = 100f;
+    public float MediumTargetSpeed = 125f;
+    public float HardTargetSpeed = 150f;
+
+    [Header("Cooldowns")]
+    public float SpaceCooldown = 0f;
+    public float CooldownMax = 3f;
+
+    [Header("Catching Timer")]
+    public float CatchTimer = 10f;
+
+    [Header("Attempts")]
+    public int SuccessAttempts = 3;
+
+    [Header("UI Elements")]
+    public TMP_Text CooldownText;
+    public TMP_Text AttemptsText;
+    public TMP_Text CatchText;
+    public TMP_Text AttemptsTillCompleteText;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        myCollider = GetComponent<Collider2D>();
+    }
+
+    void Start()
+    {
+        SetupTarget();
+
+        CooldownText.gameObject.SetActive(false);
+        AttemptsText.gameObject.SetActive(true);
+        CatchText.gameObject.SetActive(true);
+        AttemptsTillCompleteText.gameObject.SetActive(true);
+
+        SuccessAttempts = 3;
+        SpaceCooldown = 0f;
+
+        qteFinished = false;
+        SuccessfulQTE = false;
+    }
+
+    void Update()
+    {
+        if (!qteFinished)
+        {
+            if (Input.GetKeyDown(KeyCode.Space) &&
+                SpaceCooldown <= 0 &&
+                SuccessAttempts > 0)
+            {
+                if (inZone)
+                {
+                    Debug.Log("Successful QTE");
+                    
+                    AttemptsTillComplete--;
+
+                    target.Randomize();
+                }
+                else
+                {
+                    SuccessfulQTE = false;
+                    Debug.Log("Missed!");
+
+                    CooldownText.gameObject.SetActive(true);
+
+                    SpaceCooldown = CooldownMax;
+                    SuccessAttempts--;
+
+                    if (SuccessAttempts <= 0)
+                    {
+                        QTEfinishedBad();
+                    }
+                }
+            }
+        }
+
+        if (gameMode == DifficultyLevel.Easy)
+        {
+            if (AttemptsTillComplete <= 0)
+            {
+                QTEfinishedGood();
+                qteFinished = true;
+            }
+        }
+        else if (gameMode == DifficultyLevel.Medium)
+        {
+            if (AttemptsTillComplete <= 0)
+            {
+                QTEfinishedGood();
+                qteFinished = true;
+            }
+        }
+        else if (gameMode == DifficultyLevel.Hard)
+        {
+            if (AttemptsTillComplete <= 0)
+            {
+                QTEfinishedGood();
+                qteFinished = true;
+            }
+        }
+
+        Debug.Log("Attempts Till Complete: " + AttemptsTillComplete);
+
+        if (qteFinished)
+        {
+            speed = 0f;
+        }
+
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            ResetQTE();
+        }
+
+        if (SpaceCooldown > 0)
+        {
+            SpaceCooldown -= Time.deltaTime;
+
+            if (SpaceCooldown <= 0)
+            {
+                SpaceCooldown = 0;
+                CooldownText.gameObject.SetActive(false);
+            }
+        }
+
+        if (!qteFinished)
+        {
+            CatchTimer -= Time.deltaTime;
+
+            if (CatchTimer <= 0)
+            {
+                CatchTimer = 0;
+                QTEfinishedBad();
+            }
+        }
+
+        CooldownText.text = SpaceCooldown.ToString("0.00");
+        AttemptsText.text = SuccessAttempts.ToString();
+        CatchText.text = CatchTimer.ToString("0.00");
+        AttemptsTillCompleteText.text = AttemptsTillComplete.ToString();
+    }
+
+    void FixedUpdate()
+    {
+        if (qteFinished)
+            return;
+
+        float halfWidth = myCollider.bounds.extents.x;
+        float minX = backgroundBar.bounds.min.x + halfWidth;
+        float maxX = backgroundBar.bounds.max.x - halfWidth;
+
+        float newX = rb.position.x + direction * speed * Time.fixedDeltaTime;
+
+        if (newX >= maxX)
+        {
+            newX = maxX;
+            direction = -1;
+        }
+        else if (newX <= minX)
+        {
+            newX = minX;
+            direction = 1;
+        }
+
+        rb.MovePosition(new Vector2(newX, rb.position.y));
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Target"))
+        {
+            inZone = true;
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Target"))
+        {
+            inZone = false;
+        }
+    }
+
+    void SetupTarget()
+    {
+        if (target == null)
+            return;
+
+        Vector3 scale = target.transform.localScale;
+
+        switch (gameMode)
+        {
+            case DifficultyLevel.Easy:
+                scale.x = EasyTargetWidth;
+                speed = EasyTargetSpeed;
+                AttemptsTillComplete = 3;
+                CatchTimer = 10f;
+                break;
+
+            case DifficultyLevel.Medium:
+                scale.x = MediumTargetWidth;
+                speed = MediumTargetSpeed;
+                AttemptsTillComplete = 2;
+                CatchTimer = 8.5f;
+                break;
+
+            case DifficultyLevel.Hard:
+                scale.x = HardTargetWidth;
+                speed = HardTargetSpeed;
+                AttemptsTillComplete = 1;
+                CatchTimer = 7f;
+                break;
+
+            case DifficultyLevel.None:
+                speed = 0f;
+                break;
+        }
+
+        target.transform.localScale = scale;
+        target.Randomize();
+
+        inZone = false;
+    }
+
+    public void ResetQTE()
+    {
+        SuccessAttempts = 3;
+        SpaceCooldown = 0;
+        CatchTimer = 10f;
+
+        SuccessfulQTE = false;
+        qteFinished = false;
+        inZone = false;
+
+        CooldownText.gameObject.SetActive(false);
+        AttemptsText.gameObject.SetActive(true);
+        CatchText.gameObject.SetActive(true);
+        AttemptsTillCompleteText.gameObject.SetActive(true);
+        SetupTarget();
+
+        direction = 1;
+    }
+
+    public void QTEfinishedGood()
+    {
+        if (qteFinished)
+            return;
+
+        qteFinished = true;
+        SuccessfulQTE = true;
+
+        Debug.Log("You caught the fish!");
+
+        CatchText.gameObject.SetActive(false);
+        AttemptsTillCompleteText.gameObject.SetActive(false);
+
+        speed = 0f;
+    }
+
+    public void QTEfinishedBad()
+    {
+        if (qteFinished)
+            return;
+
+        qteFinished = true;
+        SuccessfulQTE = false;
+
+        Debug.Log("QTE Finished Bad");
+
+        CatchText.gameObject.SetActive(false);
+        AttemptsTillCompleteText.gameObject.SetActive(false);
+
+        speed = 0f;
+    }
+}
