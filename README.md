@@ -242,6 +242,10 @@ This could make the worker system easier to understand and give players more con
 
 It would also make the automation more interesting because players would need to organise their workers and restaurant layout effectively.
 
+Here is a Flow Chart of how the Worker patrols would work ; one has a simple showing and the other is expalined and more detailed
+
+<img width="431" height="309" alt="GROUP TITAN GDD (THE BEST)" src="https://github.com/user-attachments/assets/1ccf6816-f029-4b9d-866c-b0596d526b8f" />
+
 ---
 
 ## 💻 My Portfolio and Development Progress
